@@ -1,0 +1,27 @@
+{
+  "language_code": "en-US",
+  "app_title": "Multimodal Chatbot Demo",
+  "app_menu": {
+    "chat_documentation": "Multimodal Chatbot Demo"
+  },
+  "app_header": {
+    "powered_by": "Multimodal Chatbot Demo",
+    "help": {
+      "header": "Information",
+      "body": "This application is not an official chatbot from Red Hat. For demonstration purposes only.",
+      "footer": "Source code available at https://github.com/rh-aiservices-bu/multimodal-chatbot"
+    },
+    "select_language": "Select your language",
+    "anonymous_user": "Anonymous User"
+  },
+  "chat": {
+    "title": "Chatbot",
+    "placeholder": "Ask me anything...",
+    "new_chat": "Start a new chat",
+    "disclaimer1": "This assistant is powered by an AI. It may display inaccurate information, so please double-check the responses.",
+    "disclaimer2": "Not an official chatbot for Red Hat documentation. For demonstration purposes only.",
+    "content": {
+      "greeting": "Hi! How can I help you today?"
+    }
+  }
+}

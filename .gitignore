@@ -1,0 +1,50 @@
+# editor
+.idea/
+.vscode/
+
+# misc
+.DS_Store
+.gitkeep
+
+# env vars
+.env
+*.local
+local_collections
+
+# dependencies
+node_modules
+logs
+
+# build
+www
+www-cache
+app/backend/public/*
+!app/backend/public/.folder_keep
+
+# cache
+__pycache__
+.cache
+.eslintcache
+**/.cache_*
+
+# helpers
+.docs
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# locks
+yarn.lock
+package-lock.json
+
+# local python env
+.venv
+
+# notebook checkpoints
+*/*/.ipynb_checkpoints/*
+*/*/*/.ipynb_checkpoints/*
+
+# config
+config.json

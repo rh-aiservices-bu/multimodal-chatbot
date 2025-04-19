@@ -1,0 +1,31 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://download.pytorch.org/whl/cpu"
+verify_ssl = false
+name = "pytorch"
+
+[packages]
+einops = "~=0.8.1"
+fastapi = "~=0.115.8"
+httpx = "~=0.28.1"
+langchain = "==0.3.19"
+langchain-community = "==0.3.17"
+langchain-openai = "==0.3.6"
+openai = "==1.63.2"
+psycopg2-binary = "~=2.9.9"
+python-dotenv = "~=1.0.1"
+python-multipart = "~=0.0.20"
+torch = {version = "==2.5.1+cpu", index = "pytorch"}
+uvicorn = "~=0.34.0"
+websockets = "~=15.0"
+
+[dev-packages]
+"watchdog[watchmedo]" = "~=5.0.3"
+black = "*"
+
+[requires]
+python_version = "3.11"

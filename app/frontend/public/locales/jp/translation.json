@@ -1,0 +1,27 @@
+{
+  "language_code": "ja-JP",
+  "app_title": "マルチモーダルチャットボットデモ",
+  "app_menu": {
+    "chat_documentation": "マルチモーダルチャットボットデモ"
+  },
+  "app_header": {
+    "powered_by": "マルチモーダルチャットボットデモ",
+    "help": {
+      "header": "情報",
+      "body": "このアプリケーションは Red Hat の公式チャットボットではありません。デモ目的のみで使用されています。",
+      "footer": "ソースコードは https://github.com/rh-aiservices-bu/multimodal-chatbot で公開されています"
+    },
+    "select_language": "言語を選択",
+    "anonymous_user": "匿名ユーザー"
+  },
+  "chat": {
+    "title": "チャットボット",
+    "placeholder": "何でも聞いてください…",
+    "new_chat": "新しいチャットを開始",
+    "disclaimer1": "このアシスタントはAIによって動作しています。不正確な情報が表示される可能性があるため、回答内容を確認してください。",
+    "disclaimer2": "Red Hat ドキュメントの公式チャットボットではありません。デモ目的のみで使用されています。",
+    "content": {
+      "greeting": "こんにちは！今日はどのようなご用件でしょうか？"
+    }
+  }
+}

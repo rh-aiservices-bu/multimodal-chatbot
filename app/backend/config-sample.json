@@ -1,0 +1,76 @@
+{
+    "system_template": "You are a helpful, knowledgeable, and friendly assistant having a conversation with a human. Respond clearly, concisely, and accurately to user questions and requests. Adapt your tone to match the user's style—professional, casual, or otherwise. If clarification is needed, ask thoughtful follow-up questions. When appropriate, offer examples, summaries, or step-by-step guidance. Do not make up information; if you are unsure, say so. Be polite, nonjudgmental, and always aim to provide useful, easy-to-understand responses. Give your answer in {language} only, but don't translate any code. If your answer is not in English, don't give the English translation. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content.",
+    "translate_system_template": "Translate the following text to English. Translate the text as concisely as possible. Don't add any comment or information. If the text is already in English, don't modify it, just copy it without any other mention.",
+    "llms": [
+        {
+            "name": "Granite-vision-3.2-2b",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "granite-vision-3-2",
+            "max_tokens": 5000,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": true
+        },
+        {
+            "name": "Qwen2.5-VL-7B-Instruct-FP8-Dynamic",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "RedHatAI/Qwen2.5-VL-7B-Instruct-FP8-Dynamic",
+            "max_tokens": 50000,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": true
+        },
+        {
+            "name": "Mistral-7B-Instruct-v0.3",
+            "type": "mistral",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "mistral-7b-instruct",
+            "max_tokens": 2048,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": false
+        },
+        {
+            "name": "Granite-3.1-8B-Instruct",
+            "type": "granite",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "granite-3-8b-instruct",
+            "max_tokens": 2048,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": false
+        },
+        {
+            "name": "Granite-3.1-8B-Instruct-W4A16",
+            "type": "granite",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "granite-3-1-8b-instruct-w4a16",
+            "max_tokens": 2048,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": false
+        },
+        {
+            "name": "Llama-3.1-8B-Instruct",
+            "type": "llama",
+            "inference_endpoint": "replace_me",
+            "api_key": "replace_me",
+            "model_name": "meta-llama/Llama-3.1-8B-Instruct",
+            "max_tokens": 2048,
+            "temperature": 0.01,
+            "top_p": 0.95,
+            "presence_penalty": 1.03,
+            "supports_vision": true
+        }
+    ]
+}

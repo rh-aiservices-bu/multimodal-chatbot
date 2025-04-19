@@ -1,0 +1,27 @@
+{
+  "language_code": "zh-CN",
+  "app_title": "多模态聊天机器人演示",
+  "app_menu": {
+    "chat_documentation": "多模态聊天机器人演示"
+  },
+  "app_header": {
+    "powered_by": "多模态聊天机器人演示",
+    "help": {
+      "header": "信息",
+      "body": "此应用程序不是 Red Hat 官方聊天机器人。仅用于演示目的。",
+      "footer": "源代码可在 https://github.com/rh-aiservices-bu/multimodal-chatbot 获取"
+    },
+    "select_language": "选择语言",
+    "anonymous_user": "匿名用户"
+  },
+  "chat": {
+    "title": "聊天机器人",
+    "placeholder": "问我任何问题……",
+    "new_chat": "开始新聊天",
+    "disclaimer1": "该助手由人工智能驱动。它可能会显示不准确的信息，请自行核实回复内容。",
+    "disclaimer2": "不是 Red Hat 文档的官方聊天机器人。仅供演示使用。",
+    "content": {
+      "greeting": "你好！我能为你做些什么？"
+    }
+  }
+}

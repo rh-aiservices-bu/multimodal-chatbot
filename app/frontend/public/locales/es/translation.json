@@ -1,0 +1,27 @@
+{
+  "language_code": "es-ES",
+  "app_title": "Demostración de Chatbot Multimodal",
+  "app_menu": {
+    "chat_documentation": "Demostración de Chatbot Multimodal"
+  },
+  "app_header": {
+    "powered_by": "Demostración de Chatbot Multimodal",
+    "help": {
+      "header": "Información",
+      "body": "Esta aplicación no es un chatbot oficial de Red Hat. Solo para fines de demostración.",
+      "footer": "Código fuente disponible en https://github.com/rh-aiservices-bu/multimodal-chatbot"
+    },
+    "select_language": "Selecciona tu idioma",
+    "anonymous_user": "Usuario anónimo"
+  },
+  "chat": {
+    "title": "Chatbot",
+    "placeholder": "Pregúntame lo que quieras...",
+    "new_chat": "Iniciar un nuevo chat",
+    "disclaimer1": "Este asistente funciona con inteligencia artificial. Puede mostrar información incorrecta, así que verifica las respuestas.",
+    "disclaimer2": "No es un chatbot oficial para la documentación de Red Hat. Solo para fines de demostración.",
+    "content": {
+      "greeting": "¡Hola! ¿En qué puedo ayudarte hoy?"
+    }
+  }
+}
