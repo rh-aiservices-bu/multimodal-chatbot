@@ -1,6 +1,6 @@
 {
   "name": "multimodal-chatbot-frontend",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "Frontend for the multimodal chatbot.",
   "repository": {
     "type": "git",
