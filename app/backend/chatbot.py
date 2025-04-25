@@ -115,7 +115,7 @@ class Chatbot:
         Yields:
             dict: The chatbot's response data.
         """
-
+        
         selected_config = next( # Get the selected model configuration
             (item for item in self.llms_config if item["name"] == model), None
         )
@@ -185,6 +185,8 @@ class Chatbot:
                 messages.append(msg)
 
         messages = self._fix_conversation(messages)
+
+        #self.logger.info(f'Messages: {messages}')
 
         # Create a function to call
         resp = await llm.chat.completions.create(

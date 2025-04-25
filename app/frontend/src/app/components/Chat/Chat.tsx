@@ -10,8 +10,9 @@ import githubLogoWhite from '@app/assets/bgimages/github-mark-white.svg';
 import starLogo from '@app/assets/bgimages/star.svg';
 import starLogoWhite from '@app/assets/bgimages/star-white.svg';
 import { ChatbotFooter, } from '@patternfly/chatbot/dist/dynamic/ChatbotFooter';
-import { MessageBar } from '@patternfly/chatbot/dist/dynamic/MessageBar';
+import { MessageBarCamera } from './MessageBarCamera';
 import { AttachmentEdit, Chatbot, ChatbotAlert, ChatbotDisplayMode, ChatbotHeader, ChatbotHeaderActions, ChatbotHeaderMain, ChatbotHeaderTitle, FileDetailsLabel, FileDropZone, PreviewAttachment } from '@patternfly/chatbot';
+import CameraModal from './CameraModal';
 
 interface ModalData {
   code: string;
@@ -99,6 +100,12 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
   const [currentModalData, setCurrentModalData] = React.useState<ModalData>();
   const [showAlert, setShowAlert] = React.useState<boolean>(false);
 
+  // Ref for the hidden camera input
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Camera modal state
+  const [isCameraModalOpen, setIsCameraModalOpen] = React.useState(false);
+
   const readFile = (file: File) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -180,6 +187,34 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
     setError(undefined);
   }
 
+  // Utility to detect mobile devices
+  function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+  }
+
+  function handleCamera(event: React.MouseEvent<HTMLButtonElement>): void {
+    if (isMobileDevice()) {
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+        cameraInputRef.current.click();
+      }
+    } else {
+      setIsCameraModalOpen(true);
+    }
+  }
+
+  // Handle file selection from camera modal
+  const handleCameraModalCapture = (file: File) => {
+    handleFile([file]);
+  };
+
+  // Handle file selection from camera
+  const handleCameraFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      handleFile(Array.from(event.target.files));
+    }
+  };
+
   return (
     <PageSection hasBodyWrapper={false}
       className='chat-page'>
@@ -248,15 +283,31 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
                   </div>
                 )}
                 <FileDropZone onFileDrop={handleFileDrop}>
-                <MessageBar
-                  hasMicrophoneButton
-                  hasAttachButton={true}
-                  handleAttach={handleAttach}
-                  onSendMessage={handleSendMessage}
-                  buttonProps={{
-                    microphone: { language: t('language_code') }
-                  }}
-                />
+                  {/* Hidden input for camera capture (mobile) */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={handleCameraFileChange}
+                  />
+                  <MessageBarCamera
+                    hasMicrophoneButton
+                    hasCameraButton
+                    hasAttachButton={true}
+                    handleAttach={handleAttach}
+                    handleCamera={handleCamera}
+                    onSendMessage={handleSendMessage}
+                    buttonProps={{
+                      microphone: { language: t('language_code') }
+                    }}
+                  />
+                  <CameraModal
+                    isOpen={isCameraModalOpen}
+                    onClose={() => setIsCameraModalOpen(false)}
+                    onCapture={handleCameraModalCapture}
+                  />
                 </FileDropZone>
               </ChatbotFooter>
           </Chatbot>
