@@ -31,9 +31,9 @@ const routes: AppRouteConfig[] = [
   },
   {
     element: <Chat />,
-    label: 'app_menu.chat_documentation',
+    label: 'app_menu.chat',
     path: '/Chat',
-    title: 'app_menu.chat_documentation',
+    title: 'app_menu.chat',
   }
 ];
 
