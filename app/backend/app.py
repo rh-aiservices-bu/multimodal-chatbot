@@ -110,15 +110,8 @@ async def handle_client_request(websocket: WebSocket, data: dict):
         data["messages"],
         data["language"],
     ):
-        if next_item is None:
-            data = {"type": "job_done"}
-            answer = json.dumps(data)
-            await websocket.send_text(answer)
-            break
-        else:
-            data = {"type": "token", "token": next_item}
-            answer = json.dumps(data)
-            await websocket.send_text(answer)
+        answer = json.dumps(next_item)
+        await websocket.send_text(answer)
 
 
 @app.websocket("/ws/query/{client_id}")

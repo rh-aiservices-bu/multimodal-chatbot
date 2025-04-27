@@ -1,6 +1,6 @@
 {
   "name": "multimodal-chatbot-frontend",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Frontend for the multimodal chatbot.",
   "repository": {
     "type": "git",
@@ -41,6 +41,7 @@
     "@patternfly/react-icons": "^6.1.0",
     "@patternfly/react-styles": "^6.1.0",
     "@patternfly/react-table": "^6.1.0",
+    "eventemitter3": "^5.0.1",
     "i18next": "^24.2.3",
     "i18next-http-backend": "^3.0.2",
     "react": "^18",

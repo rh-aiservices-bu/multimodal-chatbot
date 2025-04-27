@@ -2,7 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Union
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APIError # Import APIError
 
 Message = Union[str, List[Dict]]
 
@@ -120,11 +120,17 @@ class Chatbot:
             (item for item in self.llms_config if item["name"] == model), None
         )
         if selected_config:
-            llm = AsyncOpenAI( # Initialize the LLM
-                api_key=selected_config.get("api_key"),
-                base_url=selected_config.get("inference_endpoint"),
-            )
+            try: # Initialize the LLM
+                llm = AsyncOpenAI( 
+                    api_key=selected_config.get("api_key"),
+                    base_url=selected_config.get("inference_endpoint"),
+                )
+            except Exception as e:
+                self.logger.error(f"Error initializing LLM: {e}")
+                yield {"type": "error", "message": f"Error initializing LLM: {e}"}
+                return
         else:
+            yield {"type": "error", "message": f"Model configuration for '{model}' not found."}
             return
 
      
@@ -134,17 +140,25 @@ class Chatbot:
             content = self.translate_system_template
             if content != "":
                 translate_messages.append({"role": "system", "content": content})
-            translate_messages.append({"role": "user", "content": text_to_translate})
+            translate_messages.append({"role": "user", "content": f"Text to translate:{text_to_translate}"})
 
-            english_query = await llm.chat.completions.create(
-                messages=translate_messages,
-                model=selected_config.get("model_name"),
-                max_completion_tokens=selected_config.get("max_tokens"),
-                temperature=selected_config.get("temperature"),
-                top_p=selected_config.get("top_p"),
-                presence_penalty=selected_config.get("presence_penalty"),
-                frequency_penalty=selected_config.get("frequency_penalty"),
-            )
+            try:
+                english_query = await llm.chat.completions.create(
+                    messages=translate_messages,
+                    model=selected_config.get("model_name"),
+                    max_completion_tokens=selected_config.get("max_tokens"),
+                    temperature=selected_config.get("temperature"),
+                    top_p=selected_config.get("top_p"),
+                    presence_penalty=selected_config.get("presence_penalty"),
+                    frequency_penalty=selected_config.get("frequency_penalty"),
+                )
+            except APIError as e:
+                self.logger.error(f"OpenAI API error during translation: {e}")
+                raise  # Re-raise the exception to be caught by the caller
+            except Exception as e:
+                self.logger.error(f"Unexpected error during translation: {e}")
+                raise # Re-raise the exception to be caught by the caller
+
 
             english_query = ( # Some cleanup of the response
                 str(english_query.choices[0].message.content)
@@ -155,12 +169,24 @@ class Chatbot:
                 .strip()
                 .lstrip("\t")
             )
+
             return english_query
 
+        try:
+            if language != "en":
+                # Translate the last message (query) to English
+                if isinstance(input_messages[-1]["content"], str):
+                    input_messages[-1]["content"] = await _translate_to_english(input_messages[-1]["content"])
+                elif isinstance(input_messages[-1]["content"], list):
+                    # If the last message is a list, translate the text in the {"type": "text", "text": value} item
+                    for item in input_messages[-1]["content"]:
+                        if item["type"] == "text":
+                            item["text"] = await _translate_to_english(item["text"])
+        except (APIError, Exception) as e:
+            error_message = f"Error during translation: {e}"
+            yield {"type": "error", "message": error_message}
+            return
 
-        if language != "en":
-            # Translate the last message (query) to English
-            input_messages[-1]["content"] = await _translate_to_english(input_messages[-1]["content"])
 
         messages = []
 
@@ -186,24 +212,41 @@ class Chatbot:
 
         messages = self._fix_conversation(messages)
 
-        #self.logger.info(f'Messages: {messages}')
+        try:
+            # Create a function to call
+            resp = await llm.chat.completions.create(
+                messages=messages,
+                model=selected_config.get("model_name"),
+                max_completion_tokens=selected_config.get("max_tokens"),
+                temperature=selected_config.get("temperature"),
+                top_p=selected_config.get("top_p"),
+                presence_penalty=selected_config.get("presence_penalty"),
+                frequency_penalty=selected_config.get("frequency_penalty"),
+                stream=True,
+            )
+        except APIError as e:
+            error_message = f"OpenAI API error: {e}"
+            yield {"type": "error", "message": error_message}
+            return
+        except Exception as e:
+            error_message = f"Unexpected error creating stream: {e}"
+            yield {"type": "error", "message": error_message}
+            return
 
-        # Create a function to call
-        resp = await llm.chat.completions.create(
-            messages=messages,
-            model=selected_config.get("model_name"),
-            max_completion_tokens=selected_config.get("max_tokens"),
-            temperature=selected_config.get("temperature"),
-            top_p=selected_config.get("top_p"),
-            presence_penalty=selected_config.get("presence_penalty"),
-            frequency_penalty=selected_config.get("frequency_penalty"),
-            stream=True,
-        )
 
-        async for chunk in resp:
-            if chunk.choices == []:  # Last chunk
-                yield None
-                break
-            if chunk.choices[0].delta.content:
-                delta = chunk.choices[0].delta.content
-                yield delta
+        try:
+            async for chunk in resp:
+                if chunk.choices == []:  # Last chunk
+                    data = {"type": "job_done"}
+                    yield data
+                    break
+                if chunk.choices[0].delta.content:
+                    delta = chunk.choices[0].delta.content
+                    data = {"type": "token", "token": delta}
+                    yield data
+        except APIError as e:
+            error_message = f"OpenAI API error during streaming: {e}"
+            yield {"type": "error", "message": error_message}
+        except Exception as e:
+            error_message = f"Unexpected error during streaming: {e}"
+            yield {"type": "error", "message": error_message}
