@@ -1,5 +1,4 @@
 import { NotFound } from '@app/components/NotFound/NotFound';
-import { useDocumentTitle } from '@app/utils/useDocumentTitle';
 import * as React from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Chat } from './components/Chat/Chat';

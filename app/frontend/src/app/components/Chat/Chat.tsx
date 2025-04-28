@@ -136,7 +136,6 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
     readFile(fileArr[0])
       .then((data) => {
         // eslint-disable-next-line no-console
-        console.log(data);
         setFile(fileArr[0]);
         setShowAlert(false);
         setError(undefined);

@@ -1,7 +1,12 @@
 import imgAvatar from '@app/assets/bgimages/default-user.svg';
-import logoStd from '@app/assets/bgimages/Logo-Red_Hat-AI-A-Standard-RGB.svg';
 import logoReverse from '@app/assets/bgimages/Logo-Red_Hat-AI-A-Reverse-RGB.svg';
+import logoStd from '@app/assets/bgimages/Logo-Red_Hat-AI-A-Standard-RGB.svg';
+import { useUser } from '@app/components/UserContext/UserContext';
 import {
+  Alert,
+  AlertActionCloseButton,
+  AlertGroup,
+  AlertProps,
   Avatar,
   Brand,
   Button,
@@ -12,6 +17,9 @@ import {
   DropdownGroup,
   DropdownItem,
   DropdownList,
+  EmptyState,
+  EmptyStateBody,
+  EmptyStateVariant,
   Flex,
   Masthead,
   MastheadBrand,
@@ -19,6 +27,16 @@ import {
   MastheadLogo,
   MastheadMain,
   MenuToggle,
+  MenuToggleElement,
+  NotificationBadge,
+  NotificationBadgeVariant,
+  NotificationDrawer,
+  NotificationDrawerBody,
+  NotificationDrawerHeader,
+  NotificationDrawerList,
+  NotificationDrawerListItem,
+  NotificationDrawerListItemBody,
+  NotificationDrawerListItemHeader,
   Page,
   Popover,
   SkipToContent,
@@ -29,23 +47,25 @@ import {
   ToolbarGroup,
   ToolbarItem,
 } from '@patternfly/react-core';
-import { QuestionCircleIcon } from '@patternfly/react-icons';
+import { EllipsisVIcon, QuestionCircleIcon, SearchIcon } from '@patternfly/react-icons';
 import MoonIcon from '@patternfly/react-icons/dist/esm/icons/moon-icon';
 import SunIcon from '@patternfly/react-icons/dist/esm/icons/sun-icon';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { supportedLngs } from '../../../i18n/config';
-import { useUser } from '@app/components/UserContext/UserContext';
+import Emitter from '../../utils/emitter';
 
 interface IAppLayout {
   children: React.ReactNode;
 }
 
 const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
-  const [selectedLanguage, setSelectedLanguage] = React.useState('en');
+  // Theme
   const [isDarkTheme, setIsDarkTheme] = React.useState(false);
 
+  // Language
+  const [selectedLanguage, setSelectedLanguage] = React.useState('en');
   const onChangeLanguage = (_event: React.FormEvent<HTMLSelectElement>, language: string) => {
     setSelectedLanguage(language);
   };
@@ -79,6 +99,318 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
     fetchUserInfo();
   }, []);
 
+  // Notifications
+  interface NotificationProps {
+    title: string;
+    srTitle: string;
+    variant: 'custom' | 'success' | 'danger' | 'warning' | 'info';
+    key: React.Key;
+    timestamp: string;
+    description: string;
+    isNotificationRead: boolean;
+  }
+
+  const maxDisplayedAlerts = 3;
+  const minAlerts = 0;
+  const maxAlerts = 100;
+  const alertTimeout = 8000;
+
+  const [isDrawerExpanded, setDrawerExpanded] = React.useState(false);
+  const [openDropdownKey, setOpenDropdownKey] = React.useState<React.Key | null>(null);
+  const [overflowMessage, setOverflowMessage] = React.useState<string>('');
+  const [maxDisplayed, setMaxDisplayed] = React.useState(maxDisplayedAlerts);
+  const [alerts, setAlerts] = React.useState<React.ReactElement<AlertProps>[]>([]);
+  const [notifications, setNotifications] = React.useState<NotificationProps[]>([]);
+
+  React.useEffect(() => {
+
+    const handleNotification = (data) => {
+      addNewNotification(data.variant, data.title, data.description);
+    }
+
+    Emitter.on('notification', handleNotification);
+
+    // Clean up the subscription when the component unmounts
+    return () => {
+      Emitter.off('notification', handleNotification);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    setOverflowMessage(buildOverflowMessage());
+  }, [maxDisplayed, notifications, alerts]);
+
+  const addNewNotification = (variant: NotificationProps['variant'], inputTitle, description) => {
+    const key = getUniqueId();
+    const timestamp = getTimeCreated();
+
+    // Extract message from description if possible
+    let errorDescription: string = '';
+    try {
+      const errorPrefix = 'OpenAI API error: Error code: ';
+      if (typeof description === 'string' && description.startsWith(errorPrefix)) {
+        const jsonPart = description.substring(description.indexOf('{'));
+        const jsonString = jsonPart // JSON cleaning
+          .replace(/'/g, '"')    
+          .replace(/None/g, 'null') 
+          .replace(/True/g, 'true')  
+          .replace(/False/g, 'false'); 
+        const errorObj = JSON.parse(jsonString);
+        if (errorObj && errorObj.message) {
+          errorDescription = `${errorObj.message}`;
+        }
+      }
+    } catch (e) {
+      console.error("Could not parse error description:", e);
+    }
+
+    const variantFormatted = variant.charAt(0).toUpperCase() + variant.slice(1);
+    let title = '';
+    if (inputTitle !== '') {
+      title = errorDescription 
+        ? variantFormatted + ' - ' + inputTitle + ': ' + errorDescription 
+        : variantFormatted + ' - ' + inputTitle;
+    } else {
+      title = variantFormatted;
+    }
+    const srTitle = variantFormatted + ' alert';
+
+    setNotifications((prevNotifications) => [
+      { title, srTitle, variant, key, timestamp, description, isNotificationRead: false },
+      ...prevNotifications
+    ]);
+
+    if (!isDrawerExpanded) {
+      setAlerts((prevAlerts) => [
+        <Alert
+          variant={variant}
+          title={title}
+          timeout={alertTimeout}
+          onTimeout={() => removeAlert(key)}
+          isLiveRegion
+          actionClose={
+            <AlertActionCloseButton title={title} variantLabel={`${variant} alert`} onClose={() => removeAlert(key)} />
+          }
+          key={key}
+          id={key.toString()}
+        >
+          <p>{description}</p>
+        </Alert>,
+        ...prevAlerts
+      ]);
+    }
+  };
+
+  const removeNotification = (key: React.Key) => {
+    setNotifications((prevNotifications) => prevNotifications.filter((notification) => notification.key !== key));
+  };
+
+  const removeAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  const isNotificationRead = (key: React.Key) =>
+    notifications.find((notification) => notification.key === key)?.isNotificationRead;
+
+  const markNotificationRead = (key: React.Key) => {
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((notification) =>
+        notification.key === key ? { ...notification, isNotificationRead: true } : notification
+      )
+    );
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((notification) => ({ ...notification, isNotificationRead: true }))
+    );
+  };
+
+  const getUnreadNotificationsNumber = () =>
+    notifications.filter((notification) => notification.isNotificationRead === false).length;
+
+  const containsUnreadAlertNotification = () =>
+    notifications.filter(
+      (notification) => notification.isNotificationRead === false && notification.variant === 'danger'
+    ).length > 0;
+
+  const getNotificationBadgeVariant = () => {
+    if (getUnreadNotificationsNumber() === 0) {
+      return NotificationBadgeVariant.read;
+    }
+    if (containsUnreadAlertNotification()) {
+      return NotificationBadgeVariant.attention;
+    }
+    return NotificationBadgeVariant.unread;
+  };
+
+  const onNotificationBadgeClick = () => {
+    removeAllAlerts();
+    setDrawerExpanded(!isDrawerExpanded);
+  };
+
+  const onDropdownToggle = (id: React.Key) => {
+    if (id && openDropdownKey !== id) {
+      setOpenDropdownKey(id);
+      return;
+    }
+    setOpenDropdownKey(null);
+  };
+
+  const onDropdownSelect = () => {
+    setOpenDropdownKey(null);
+  };
+
+  const buildOverflowMessage = () => {
+    const overflow = alerts.length - maxDisplayed;
+    if (overflow > 0 && maxDisplayed > 0) {
+      return `View ${overflow} more notification(s) in notification drawer`;
+    }
+    return '';
+  };
+
+  const getUniqueId = () => new Date().getTime();
+
+  const getTimeCreated = () => {
+    const dateCreated = new Date();
+    return (
+      dateCreated.toDateString() +
+      ' at ' +
+      ('00' + dateCreated.getHours().toString()).slice(-2) +
+      ':' +
+      ('00' + dateCreated.getMinutes().toString()).slice(-2)
+    );
+  };
+
+  const removeAlert = (key: React.Key) => {
+    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.props.id !== key.toString()));
+  };
+
+  const removeAllAlerts = () => {
+    setAlerts([]);
+  };
+
+  const onAlertGroupOverflowClick = () => {
+    removeAllAlerts();
+    setDrawerExpanded(true);
+  };
+
+  const onMaxDisplayedAlertsMinus = () => {
+    setMaxDisplayed(normalizeAlertsNumber(maxDisplayed - 1));
+  };
+
+  const onMaxDisplayedAlertsChange = (event: any) => {
+    setMaxDisplayed(normalizeAlertsNumber(Number(event.target.value)));
+  };
+
+  const onMaxDisplayedAlertsPlus = () => {
+    setMaxDisplayed(normalizeAlertsNumber(maxDisplayed + 1));
+  };
+
+  const normalizeAlertsNumber = (value: number) => Math.max(Math.min(value, maxAlerts), minAlerts);
+
+  const alertButtonStyle = { marginRight: '8px', marginTop: '8px' };
+
+  const notificationBadge = (
+    <ToolbarItem>
+      <NotificationBadge
+        variant={getNotificationBadgeVariant()}
+        onClick={onNotificationBadgeClick}
+        aria-label="Notifications"
+      ></NotificationBadge>
+    </ToolbarItem>
+  );
+
+  const notificationDrawerActions = (
+    <>
+      <DropdownItem key="markAllRead" onClick={markAllNotificationsRead}>
+        Mark all read
+      </DropdownItem>
+      <DropdownItem key="clearAll" onClick={removeAllNotifications}>
+        Clear all
+      </DropdownItem>
+    </>
+  );
+  const notificationDrawerDropdownItems = (key: React.Key) => [
+    <DropdownItem key={`markRead-${key}`} onClick={() => markNotificationRead(key)}>
+      Mark as read
+    </DropdownItem>,
+    <DropdownItem key={`clear-${key}`} onClick={() => removeNotification(key)}>
+      Clear
+    </DropdownItem>
+  ];
+
+  const notificationDrawer = (
+    <NotificationDrawer>
+      <NotificationDrawerHeader count={getUnreadNotificationsNumber()} onClose={(_event) => setDrawerExpanded(false)}>
+        <Dropdown
+          id="notification-drawer-0"
+          isOpen={openDropdownKey === 'dropdown-toggle-id-0'}
+          onSelect={onDropdownSelect}
+          popperProps={{ position: 'right' }}
+          onOpenChange={(isOpen: boolean) => !isOpen && setOpenDropdownKey(null)}
+          toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+            <MenuToggle
+              ref={toggleRef}
+              isExpanded={openDropdownKey === 'dropdown-toggle-id-0'}
+              variant="plain"
+              onClick={() => onDropdownToggle('dropdown-toggle-id-0')}
+              aria-label="Notification drawer actions"
+              icon={<EllipsisVIcon />}
+            />
+          )}
+        >
+          <DropdownList>{notificationDrawerActions}</DropdownList>
+        </Dropdown>
+      </NotificationDrawerHeader>
+      <NotificationDrawerBody>
+        {notifications.length !== 0 && (
+          <NotificationDrawerList>
+            {notifications.map(({ key, variant, title, srTitle, description, timestamp }, index) => (
+              <NotificationDrawerListItem
+                key={key}
+                variant={variant}
+                isRead={isNotificationRead(key)}
+                onClick={() => markNotificationRead(key)}
+              >
+                <NotificationDrawerListItemHeader variant={variant} title={title} srTitle={srTitle}>
+                  <Dropdown
+                    id={key.toString()}
+                    isOpen={openDropdownKey === key}
+                    onSelect={onDropdownSelect}
+                    popperProps={{ position: 'right' }}
+                    onOpenChange={(isOpen: boolean) => !isOpen && setOpenDropdownKey(null)}
+                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        isExpanded={openDropdownKey === key}
+                        variant="plain"
+                        onClick={() => onDropdownToggle(key)}
+                        aria-label={`Notification ${index + 1} actions`}
+                      >
+                        <EllipsisVIcon aria-hidden="true" />
+                      </MenuToggle>
+                    )}
+                  >
+                    <DropdownList>{notificationDrawerDropdownItems(key)}</DropdownList>
+                  </Dropdown>
+                </NotificationDrawerListItemHeader>
+                <NotificationDrawerListItemBody timestamp={timestamp}> {description} </NotificationDrawerListItemBody>
+              </NotificationDrawerListItem>
+            ))}
+          </NotificationDrawerList>
+        )}
+        {notifications.length === 0 && (
+          <EmptyState headingLevel="h2" titleText="No notifications found" icon={SearchIcon} variant={EmptyStateVariant.full}>
+            <EmptyStateBody>There are currently no notifications.</EmptyStateBody>
+          </EmptyState>
+        )}
+      </NotificationDrawerBody>
+    </NotificationDrawer>
+  );
+
+
+  // Header
   const HeaderTools = ({
     isDarkTheme,
     setIsDarkTheme
@@ -142,6 +474,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
                 </DropdownGroup>
               </Dropdown>
             </ToolbarItem>
+            {notificationBadge}
             <ToolbarItem>
               <Popover
                 aria-label="Help"
@@ -206,8 +539,14 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
     <Page
       mainContainerId={pageId}
       masthead={Header}
-      skipToContent={PageSkipToContent}>
+      skipToContent={PageSkipToContent}
+      notificationDrawer={notificationDrawer}
+      isNotificationDrawerExpanded={isDrawerExpanded}
+      >
       {children}
+      <AlertGroup isToast isLiveRegion onOverflowClick={onAlertGroupOverflowClick} overflowMessage={overflowMessage}>
+        {alerts.slice(0, maxDisplayed)}
+      </AlertGroup>
     </Page>
   );
 };

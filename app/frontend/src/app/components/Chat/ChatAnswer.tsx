@@ -1,12 +1,13 @@
 import userAvatar from '@app/assets/bgimages/default-user.svg';
 import orb from '@app/assets/bgimages/orb.svg';
-import config from '@app/config';
-import { Flex, FlexItem, FormSelect, FormSelectOption, Content } from "@patternfly/react-core";
-import React, { forwardRef, useImperativeHandle, Ref, useRef } from 'react';
-import { Answer, MessageContent, MessageHistory, Query, Models } from './classes';
-import { ChatbotContent, Message, MessageBox } from '@patternfly/chatbot';
 import { useUser } from '@app/components/UserContext/UserContext';
+import config from '@app/config';
+import { ChatbotContent, Message, MessageBox } from '@patternfly/chatbot';
+import { Content, Flex, FlexItem, FormSelect, FormSelectOption } from "@patternfly/react-core";
+import React, { forwardRef, Ref, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Answer, MessageContent, MessageHistory, Models, Query } from './classes';
+import Emitter from '../../utils/emitter';
 
 interface ChatAnswerProps {
 }
@@ -117,8 +118,10 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
           answer?.timestamp || new Date()
         ));
         return;
+      } else if (data['type'] === 'error') {
+        Emitter.emit('notification', { variant: 'warning', title: 'LLM Error', description: data['message'] });
       }
-    }
+    } 
 
     connection.current = ws;
 
@@ -270,15 +273,47 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
    * @param content - The text content to read aloud.
    */
   const readAloud = (content: string) => {
-    const language = t('language_code') || 'en-US'; // Get the language from the t function, default to 'en-US'
-    if ('speechSynthesis' in window) {
+    if (!('speechSynthesis' in window)) {
+      console.error('Speech synthesis is not supported in this browser.');
+      return;
+    }
+  
+    const language = t('language_code') || 'en-US';
+    const synth = window.speechSynthesis;
+  
+    const speak = () => {
+      synth.cancel();
+  
+      const voices = synth.getVoices();
+      console.log('Available voices:', voices);
+  
       const utterance = new SpeechSynthesisUtterance(content);
       utterance.lang = language;
-      window.speechSynthesis.speak(utterance);
+      utterance.volume = 1;
+      utterance.rate = 1;
+      utterance.pitch = 1;
+  
+      // Find a voice that matches the desired language
+      const matchingVoice = voices.find(v => v.lang.startsWith(language));
+      
+      if (matchingVoice) {
+        utterance.voice = matchingVoice;
+        console.log('Using voice:', matchingVoice.name);
+      } else {
+        console.warn(`No matching voice found for language: ${language}`);
+      }
+  
+      synth.speak(utterance);
+    };
+  
+    if (synth.getVoices().length !== 0) {
+      speak();
     } else {
-      console.error('Speech synthesis is not supported in this browser.');
+      synth.addEventListener('voiceschanged', speak, { once: true });
     }
   };
+  
+  
 
   return (
     <Flex direction={{ default: 'column' }} className='chat-item'>
