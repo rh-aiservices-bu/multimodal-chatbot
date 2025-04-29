@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant } from '@patternfly/react-core';
+import { ChatbotDisplayMode, ChatbotModal } from '@patternfly/chatbot';
 
 interface CameraModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCapture: (file: File) => void;
+  displayMode?: ChatbotDisplayMode.default | ChatbotDisplayMode.embedded;
 }
 
-const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCapture }) => {
+const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCapture, displayMode }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -61,11 +63,12 @@ const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCapture })
   };
 
   return (
-    <Modal
+    <ChatbotModal
       title="Take a picture"
       isOpen={isOpen}
       onClose={onClose}
-      variant={ModalVariant.small}>
+      variant={ModalVariant.small}
+      displayMode={displayMode}>
       <ModalHeader title="Add a picture to the conversation" labelId="variant-modal-title" />
       <ModalBody id="modal-box-body-variant">
       {error ? (
@@ -85,7 +88,7 @@ const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCapture })
             Cancel
           </Button>
         </ModalFooter>
-    </Modal>
+    </ChatbotModal>
 
   );
 };

@@ -2,11 +2,12 @@ import userAvatar from '@app/assets/bgimages/default-user.svg';
 import orb from '@app/assets/bgimages/orb.svg';
 import { useUser } from '@app/components/UserContext/UserContext';
 import config from '@app/config';
-import { ChatbotContent, Message, MessageBox } from '@patternfly/chatbot';
+import { ChatbotContent, ChatbotDisplayMode, Message, MessageBox } from '@patternfly/chatbot';
 import { Content, Flex, FlexItem, FormSelect, FormSelectOption } from "@patternfly/react-core";
 import React, { forwardRef, Ref, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answer, MessageContent, MessageHistory, Models, Query } from './classes';
+import { PreviewImageAttachment } from './PreviewImageAttachment'
 import Emitter from '../../utils/emitter';
 
 interface ChatAnswerProps {
@@ -121,7 +122,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
       } else if (data['type'] === 'error') {
         Emitter.emit('notification', { variant: 'warning', title: 'LLM Error', description: data['message'] });
       }
-    } 
+    }
 
     connection.current = ws;
 
@@ -157,7 +158,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
           new Answer(answer.content, answer.timestamp)
         );
         const previousQuery = new MessageContent(
-          new Query(query.content,'', new Date(), query.file)
+          new Query(query.content, '', new Date(), query.file)
         );
         const previousMessageHistory = new MessageHistory(messageHistory.messages);
         setMessageHistory(new MessageHistory(
@@ -277,43 +278,67 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
       console.error('Speech synthesis is not supported in this browser.');
       return;
     }
-  
+
     const language = t('language_code') || 'en-US';
     const synth = window.speechSynthesis;
-  
+
     const speak = () => {
       synth.cancel();
-  
+
       const voices = synth.getVoices();
       console.log('Available voices:', voices);
-  
+
       const utterance = new SpeechSynthesisUtterance(content);
       utterance.lang = language;
       utterance.volume = 1;
       utterance.rate = 1;
       utterance.pitch = 1;
-  
+
       // Find a voice that matches the desired language
       const matchingVoice = voices.find(v => v.lang.startsWith(language));
-      
+
       if (matchingVoice) {
         utterance.voice = matchingVoice;
         console.log('Using voice:', matchingVoice.name);
       } else {
         console.warn(`No matching voice found for language: ${language}`);
       }
-  
+
       synth.speak(utterance);
     };
-  
+
     if (synth.getVoices().length !== 0) {
       speak();
     } else {
       synth.addEventListener('voiceschanged', speak, { once: true });
     }
   };
-  
-  
+
+  // Attachment handling
+  interface ModalData {
+    base64Image: string;
+    fileName: string;
+  }
+
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = React.useState<boolean>(false);
+  const [currentModalData, setCurrentModalData] = React.useState<ModalData>();
+
+  const onClick = async (event: React.MouseEvent, name: string, id: string | number | undefined) => {
+    if (typeof id !== 'number' || !messageHistory.messages[id]?.messageContent?.file) {
+      console.error("Invalid message index or file not found for attachment click.");
+      Emitter.emit('notification', { variant: 'danger', title: 'Error', description: 'Could not load attachment preview.' });
+      return;
+    }
+
+    try {
+      const base64String = await fileToBase64(messageHistory.messages[id].messageContent.file as File);
+      setCurrentModalData({ fileName: name, base64Image: base64String });
+      setIsPreviewModalOpen(true);
+    } catch (error) {
+      Emitter.emit('notification', { variant: 'danger', title: 'Error', description: 'Could not load attachment preview.' });
+    }
+  };
+
 
   return (
     <Flex direction={{ default: 'column' }} className='chat-item'>
@@ -356,7 +381,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
                         content={message.messageContent.content}
                         timestamp={message.messageContent.timestamp ? message.messageContent.timestamp.toLocaleString() : ''}
                         avatar={message.messageContent.type === "Query" ? userAvatar : orb}
-                        attachments={message.messageContent.file?[{name: message.messageContent.file?.name ?? ""}]:undefined}
+                        attachments={message.messageContent.file ? [{ name: message.messageContent.file?.name ?? "", id: index, onClick }] : undefined}
                         actions={{
                           copy: {
                             onClick: () => copyToClipboard(
@@ -412,6 +437,16 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
               </div>
             )}
           </MessageBox>
+          {currentModalData && (
+            <PreviewImageAttachment
+              displayMode={ChatbotDisplayMode.embedded}
+              base64Image={currentModalData?.base64Image}
+              fileName={currentModalData?.fileName}
+              isModalOpen={isPreviewModalOpen}
+              onDismiss={() => setCurrentModalData(undefined)}
+              handleModalToggle={() => setIsPreviewModalOpen(false)}
+            />
+          )}
         </ChatbotContent>
       </FlexItem>
     </Flex>
