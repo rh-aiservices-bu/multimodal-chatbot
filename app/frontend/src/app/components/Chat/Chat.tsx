@@ -306,6 +306,7 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
                     isOpen={isCameraModalOpen}
                     onClose={() => setIsCameraModalOpen(false)}
                     onCapture={handleCameraModalCapture}
+                    displayMode={ChatbotDisplayMode.embedded}
                   />
                 </FileDropZone>
               </ChatbotFooter>
