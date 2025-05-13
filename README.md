@@ -1,5 +1,9 @@
 # Multimodal Chatbot Demo
 
+![screenshot.png](img/screenshot.png)
+
+[Link to interactive presentation](https://interact.redhat.com/share/mKJcep7CgKLEzhOgrPRC)
+
 Features:
 
 - Patternfly 6 based UI, using the Chatbot component, with support for multimodal models
