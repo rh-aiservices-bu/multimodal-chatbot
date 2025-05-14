@@ -26,7 +26,6 @@
         },
         {
             "name": "Mistral-7B-Instruct-v0.3",
-            "type": "mistral",
             "inference_endpoint": "replace_me",
             "api_key": "replace_me",
             "model_name": "mistral-7b-instruct",
@@ -38,7 +37,6 @@
         },
         {
             "name": "Granite-3.1-8B-Instruct",
-            "type": "granite",
             "inference_endpoint": "replace_me",
             "api_key": "replace_me",
             "model_name": "granite-3-8b-instruct",
@@ -50,7 +48,6 @@
         },
         {
             "name": "Granite-3.1-8B-Instruct-W4A16",
-            "type": "granite",
             "inference_endpoint": "replace_me",
             "api_key": "replace_me",
             "model_name": "granite-3-1-8b-instruct-w4a16",
@@ -62,7 +59,6 @@
         },
         {
             "name": "Llama-3.1-8B-Instruct",
-            "type": "llama",
             "inference_endpoint": "replace_me",
             "api_key": "replace_me",
             "model_name": "meta-llama/Llama-3.1-8B-Instruct",
