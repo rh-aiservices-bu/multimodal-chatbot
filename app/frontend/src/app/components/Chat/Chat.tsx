@@ -277,8 +277,15 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
                   </ChatbotAlert>
                 )}
                 {file && (
-                  <div>
-                    <FileDetailsLabel fileName={file.name} isLoading={isLoadingFile} onClose={onClose} />
+                  <div className="chat-attachment-preview">
+                    {isLoadingFile ? (
+                      <FileDetailsLabel fileName={file.name} isLoading={isLoadingFile} onClose={onClose} />
+                    ) : (
+                      <div className="chat-attachment-preview-image">
+                        <img src={URL.createObjectURL(file)} alt={file.name} />
+                        <Button variant="plain" aria-label="Remove attachment" onClick={onClose} className="chat-attachment-preview-close">✕</Button>
+                      </div>
+                    )}
                   </div>
                 )}
                 <FileDropZone onFileDrop={handleFileDrop}>

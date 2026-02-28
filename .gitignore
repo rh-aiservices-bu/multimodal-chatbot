@@ -48,3 +48,7 @@ package-lock.json
 
 # config
 config.json
+
+venv/
+.venv/
+.env.secret

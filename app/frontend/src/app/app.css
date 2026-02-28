@@ -294,3 +294,48 @@ body,
   padding-right: 10px;
 }
 
+.chat-inline-image {
+  max-width: 300px;
+  margin-left: 54px;
+  margin-top: -12px;
+  margin-bottom: 8px;
+}
+
+.chat-inline-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #d2d2d2;
+}
+
+.chat-attachment-preview {
+  padding: 8px 16px;
+}
+
+.chat-attachment-preview-image {
+  position: relative;
+  display: inline-block;
+  max-width: 150px;
+}
+
+.chat-attachment-preview-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #d2d2d2;
+}
+
+.chat-attachment-preview-close {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #333 !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  line-height: 24px !important;
+}
+
