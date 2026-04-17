@@ -486,7 +486,7 @@ const AppLayout: React.FunctionComponent<IAppLayout> = ({ children }) => {
                 <Button aria-label="Help" variant={ButtonVariant.plain} icon={<QuestionCircleIcon />} />
               </Popover>
             </ToolbarItem>
-            <ToolbarItem>
+            <ToolbarItem visibility={{ default: 'hidden', lg: 'visible' }}>
                 <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsCenter' }} justifyContent={{ default: 'justifyContentCenter' }} className='pf-v5-global--spacer--md'>
                 <Content component={ContentVariants.p}>
                   {userName}

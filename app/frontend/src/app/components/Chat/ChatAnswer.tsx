@@ -2,12 +2,12 @@ import userAvatar from '@app/assets/bgimages/default-user.svg';
 import orb from '@app/assets/bgimages/orb.svg';
 import { useUser } from '@app/components/UserContext/UserContext';
 import config from '@app/config';
-import { ChatbotContent, ChatbotDisplayMode, Message, MessageBox } from '@patternfly/chatbot';
+import { ChatbotContent, Message, MessageBox } from '@patternfly/chatbot';
 import { Content, Flex, FlexItem, FormSelect, FormSelectOption } from "@patternfly/react-core";
 import React, { forwardRef, Ref, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Answer, MessageContent, MessageHistory, Models, Query } from './classes';
-import { PreviewImageAttachment } from './PreviewImageAttachment'
+
 import Emitter from '../../utils/emitter';
 
 interface ChatAnswerProps {
@@ -53,8 +53,10 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
     const fetchLLMs = async () => {
       const response = await fetch(`${config.backend_api_url}/llms`);
       const data = await response.json();
-      setLlms(data);
-      setSelectedLlm(data[0].name);
+      if (data && data.length > 0) {
+        setLlms(data);
+        setSelectedLlm(data[0].name);
+      }
     }
     fetchLLMs();
   }
@@ -76,6 +78,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
   // Stopwatch and timer for tokens stats
   const startTime = useRef<number | null>(null);
   const [tokens, setTokens] = React.useState<number>(0);
+  const [totalTokens, setTotalTokens] = React.useState<number>(0);
   const [ttft, setTtft] = React.useState<number>(0);
   const [tps, setTps] = React.useState<number>(0);
 
@@ -103,6 +106,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
             focusOnNewAnswer();
           }
           const newTokens = prevTokens + 1;
+          setTotalTokens((prev) => prev + 1);
           if (newTokens === 1) {
             if (startTime.current !== null) {
               setTtft((Date.now() - startTime.current) / 1000);
@@ -244,6 +248,7 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
       new MessageContent(new Answer(t('chat.content.greeting'), new Date())),
     ]));
     setAnswer(new Answer('', new Date())); // Clear the previous response
+    setTotalTokens(0);
   };
 
 
@@ -314,32 +319,6 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
     }
   };
 
-  // Attachment handling
-  interface ModalData {
-    base64Image: string;
-    fileName: string;
-  }
-
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = React.useState<boolean>(false);
-  const [currentModalData, setCurrentModalData] = React.useState<ModalData>();
-
-  const onClick = async (event: React.MouseEvent, name: string, id: string | number | undefined) => {
-    if (typeof id !== 'number' || !messageHistory.messages[id]?.messageContent?.file) {
-      console.error("Invalid message index or file not found for attachment click.");
-      Emitter.emit('notification', { variant: 'danger', title: 'Error', description: 'Could not load attachment preview.' });
-      return;
-    }
-
-    try {
-      const base64String = await fileToBase64(messageHistory.messages[id].messageContent.file as File);
-      setCurrentModalData({ fileName: name, base64Image: base64String });
-      setIsPreviewModalOpen(true);
-    } catch (error) {
-      Emitter.emit('notification', { variant: 'danger', title: 'Error', description: 'Could not load attachment preview.' });
-    }
-  };
-
-
   return (
     <Flex direction={{ default: 'column' }} className='chat-item'>
       <FlexItem >
@@ -361,7 +340,10 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
               <Content component="p" className='chat-llm-stats'>{ttft.toFixed(2)}s tft,</Content>
             )}
             {tps !== 0 && (
-              <Content component="p" className='chat-llm-stats'>{tps.toFixed(2)} t/s</Content>
+              <Content component="p" className='chat-llm-stats'>{tps.toFixed(2)} t/s,</Content>
+            )}
+            {totalTokens !== 0 && (
+              <Content component="p" className='chat-llm-stats'>{totalTokens} tokens</Content>
             )}
           </Content>
         </Flex>
@@ -372,16 +354,20 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
             {/* Message History rendering */}
             {messageHistory.messages.map((message: MessageContent, index) => {
               const renderMessage = () => {
-                if (message.messageContent.content.length != 0) {
-                  if ((message.messageContent.type === "Query" || message.messageContent.type === "Answer") && message.messageContent.content != "") {
-                    return (
+                const hasContent = message.messageContent.content.length != 0;
+                const hasFile = !!(message.messageContent.file);
+                if (!hasContent && !hasFile) return;
+                if (message.messageContent.type !== "Query" && message.messageContent.type !== "Answer") return;
+
+                return (
+                  <>
+                    {hasContent && (
                       <Message
                         name={message.messageContent.type === "Query" ? userName : "Bot"}
                         role={message.messageContent.type === "Query" ? "user" : "bot"}
                         content={message.messageContent.content}
                         timestamp={message.messageContent.timestamp ? message.messageContent.timestamp.toLocaleString() : ''}
                         avatar={message.messageContent.type === "Query" ? userAvatar : orb}
-                        attachments={message.messageContent.file ? [{ name: message.messageContent.file?.name ?? "", id: index, onClick }] : undefined}
                         actions={{
                           copy: {
                             onClick: () => copyToClipboard(
@@ -395,15 +381,17 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
                           }
                         }}
                       />
-                    );
-                  } else {
-                    {/* If the message is of an unknown type */ }
-                    return;
-                  }
-                } else {
-                  {/* If the message is empty */ }
-                  return;
-                }
+                    )}
+                    {hasFile && (
+                      <div className="chat-inline-image">
+                        <img
+                          src={URL.createObjectURL(message.messageContent.file as File)}
+                          alt={message.messageContent.file!.name}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
               }
               return (
                 <React.Fragment key={index}>
@@ -437,16 +425,6 @@ const ChatAnswer = forwardRef((props: ChatAnswerProps, ref: Ref<ChatAnswerRef>) 
               </div>
             )}
           </MessageBox>
-          {currentModalData && (
-            <PreviewImageAttachment
-              displayMode={ChatbotDisplayMode.embedded}
-              base64Image={currentModalData?.base64Image}
-              fileName={currentModalData?.fileName}
-              isModalOpen={isPreviewModalOpen}
-              onDismiss={() => setCurrentModalData(undefined)}
-              handleModalToggle={() => setIsPreviewModalOpen(false)}
-            />
-          )}
         </ChatbotContent>
       </FlexItem>
     </Flex>

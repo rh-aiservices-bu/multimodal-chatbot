@@ -236,7 +236,7 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
                 </ChatbotHeaderTitle>
               </ChatbotHeaderMain>
               <ChatbotHeaderActions>
-                <Flex>
+                <Flex flexWrap={{ default: 'wrap' }} gap={{ default: 'gapSm' }} className="chat-header-actions">
                   <FlexItem>
                     <Button onClick={addItem} variant="primary">
                       Add LLM
@@ -277,8 +277,15 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
                   </ChatbotAlert>
                 )}
                 {file && (
-                  <div>
-                    <FileDetailsLabel fileName={file.name} isLoading={isLoadingFile} onClose={onClose} />
+                  <div className="chat-attachment-preview">
+                    {isLoadingFile ? (
+                      <FileDetailsLabel fileName={file.name} isLoading={isLoadingFile} onClose={onClose} />
+                    ) : (
+                      <div className="chat-attachment-preview-image">
+                        <img src={URL.createObjectURL(file)} alt={file.name} />
+                        <Button variant="plain" aria-label="Remove attachment" onClick={onClose} className="chat-attachment-preview-close">✕</Button>
+                      </div>
+                    )}
                   </div>
                 )}
                 <FileDropZone onFileDrop={handleFileDrop}>
@@ -312,7 +319,7 @@ const Chat: React.FunctionComponent<ChatProps> = () => {
               </ChatbotFooter>
           </Chatbot>
         </FlexItem>
-        <FlexItem>
+        <FlexItem style={{ flexShrink: 0 }}>
           <Stack>
             {/* Disclaimer section */}
             <StackItem>
